@@ -1,0 +1,21 @@
+sudo: false
+
+language: php
+
+php:
+    - 7.0
+
+install:
+    - echo "{\"http-basic\":{\"repo.magento.com\":{\"username\":\"${MAGENTO_USERNAME}\",\"password\":\"${MAGENTO_PASSWORD}\"}}}" > ~/.composer/auth.json
+    - composer install --prefer-dist
+    - composer create-project --repository=https://repo.magento.com magento/marketplace-eqp marketplace-eqp
+
+script:
+    - php marketplace-eqp/vendor/bin/phpcs Model/ Test/  --standard=MEQP2 --severity=10
+    - php vendor/bin/phpmd Model/,Test text cleancode,codesize,controversial,design,naming,unusedcode --ignore-violations-on-exit
+    - php vendor/phpunit/phpunit/phpunit Test
+
+env:
+    global:
+        - secure: ""
+        - secure: ""

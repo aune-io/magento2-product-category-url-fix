@@ -1,0 +1,30 @@
+{
+    "name": "aune-io/magento2-product-category-url-fix",
+    "description": "Product category url fix for Magento 2",
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://repo.magento.com/"
+        }
+    ],
+    "require": {
+        "php": "~7.0.0",
+        "psr/log": "1.0.2",
+        "magento/framework": "100.1.*",
+        "magento/module-catalog-url-rewrite": "100.1.*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.1.0",
+        "squizlabs/php_codesniffer": "1.5.3",
+        "phpmd/phpmd": "@stable"
+    },
+    "type": "magento2-module",
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Aune\\ProductCategoryUrlFix\\": ""
+        }
+    }
+}
