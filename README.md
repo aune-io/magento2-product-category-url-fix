@@ -14,7 +14,6 @@ This modules prevents the generation of those urls if the aforementioned setting
 This extension supports the following versions of Magento:
 
 *	Community Edition (CE) versions 2.1.x and 2.2.x
-*	Enterprise Edition (EE) versions 2.1.x and 2.2.x
 
 ## Installation
 1. Require the module via Composer
