@@ -12,7 +12,7 @@ use Aune\ProductCategoryUrlFix\Model\CatalogUrlRewrite\ProductUrlRewriteGenerato
  * @SuppressWarnings(PHPMD.LongVariable)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ProductUrlRewriteGeneratorTest extends \PHPUnit_Framework_TestCase
+class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
 {
     /** @var \PHPUnit_Framework_MockObject_MockObject */
     protected $canonicalUrlRewriteGenerator;
