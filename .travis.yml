@@ -13,7 +13,7 @@ install:
 script:
     - php marketplace-eqp/vendor/bin/phpcs Model/ Test/  --standard=MEQP2 --severity=10
     - php vendor/bin/phpmd Model/,Test text cleancode,codesize,controversial,design,naming,unusedcode --ignore-violations-on-exit
-    - php vendor/phpunit/phpunit/phpunit Test --coverage-clover Test/Unit/logs/clover.xml Test
+    - php vendor/phpunit/phpunit/phpunit --coverage-clover Test/Unit/logs/clover.xml Test
 
 after_script:
     - php vendor/bin/coveralls -v
