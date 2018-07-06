@@ -16,7 +16,7 @@ script:
     - php vendor/phpunit/phpunit/phpunit --coverage-clover Test/Unit/logs/clover.xml Test
 
 after_script:
-    - php vendor/bin/coveralls -v
+    - php vendor/bin/php-coveralls -v
 
 env:
     global:
