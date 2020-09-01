@@ -13,7 +13,7 @@ This modules prevents the generation of those urls if the aforementioned setting
 ## System requirements
 This extension supports the following versions of Magento:
 
-*	Community Edition (CE) versions 2.1.x, 2.2.x and 2.3.x
+*	Community Edition (CE) versions 2.1.x, 2.2.x, 2.3.x and 2.4.x
 
 ## Installation
 1. Require the module via Composer
