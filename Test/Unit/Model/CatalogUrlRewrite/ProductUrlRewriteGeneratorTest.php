@@ -2,6 +2,7 @@
 
 namespace Aune\ProductCategoryUrlFix\Test\Unit\Model\CatalogUrlRewrite;
 
+use ReflectionClass;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Catalog\Model\Product;
@@ -110,7 +111,7 @@ class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
         );
 
         // Inject private property to avoid ObjectManager error
-        $reflection = new \ReflectionClass(get_class($this->productUrlRewriteGenerator));
+        $reflection = new ReflectionClass(get_class($this->productUrlRewriteGenerator));
         $reflectionProperty = $reflection->getProperty('productScopeRewriteGenerator');
         $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue($this->productUrlRewriteGenerator, $this->productScopeRewriteGenerator);

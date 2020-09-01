@@ -17,6 +17,7 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 
 /**
+ * @SuppressWarnings(PHPMD.LongVariable)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ProductUrlRewriteGenerator extends \Magento\CatalogUrlRewrite\Model\ProductUrlRewriteGenerator
@@ -30,8 +31,6 @@ class ProductUrlRewriteGenerator extends \Magento\CatalogUrlRewrite\Model\Produc
      * Generates url rewrites for different scopes.
      * 
      * @var ProductScopeRewriteGenerator
-     * 
-     * @SuppressWarnings(PHPMD.LongVariable)
      */
     private $productScopeRewriteGenerator;
     
@@ -44,7 +43,6 @@ class ProductUrlRewriteGenerator extends \Magento\CatalogUrlRewrite\Model\Produc
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * 
-     * @SuppressWarnings(PHPMD.LongVariable)
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function __construct(
