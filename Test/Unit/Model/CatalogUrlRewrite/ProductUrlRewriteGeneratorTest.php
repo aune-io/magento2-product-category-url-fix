@@ -4,8 +4,11 @@ namespace Aune\ProductCategoryUrlFix\Test\Unit\Model\CatalogUrlRewrite;
 
 use ReflectionClass;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\ObjectManager as AppObjectManager;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Catalog\Model\Product;
+use Magento\CatalogUrlRewrite\Model\GetVisibleForStores;
 use Magento\CatalogUrlRewrite\Model\ProductScopeRewriteGenerator;
 use Aune\ProductCategoryUrlFix\Model\CatalogUrlRewrite\ProductUrlRewriteGenerator;
 
@@ -13,42 +16,46 @@ use Aune\ProductCategoryUrlFix\Model\CatalogUrlRewrite\ProductUrlRewriteGenerato
  * @SuppressWarnings(PHPMD.LongVariable)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(\Aune\ProductCategoryUrlFix\Model\CatalogUrlRewrite\ProductUrlRewriteGenerator::class)]
 class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
 {
-    /** @var \PHPUnit_Framework_MockObject_MockObject */
+    /** @var \\PHPUnit\Framework\MockObject\MockObject */
     protected $canonicalUrlRewriteGenerator;
 
-    /** @var \PHPUnit_Framework_MockObject_MockObject */
+    /** @var \\PHPUnit\Framework\MockObject\MockObject */
     protected $currentUrlRewritesRegenerator;
 
-    /** @var \PHPUnit_Framework_MockObject_MockObject */
+    /** @var \\PHPUnit\Framework\MockObject\MockObject */
     protected $categoriesUrlRewriteGenerator;
 
-    /** @var \PHPUnit_Framework_MockObject_MockObject */
+    /** @var \\PHPUnit\Framework\MockObject\MockObject */
     protected $anchorUrlRewriteGenerator;
 
     /** @var \Aune\ProductCategoryUrlFix\Model\CatalogUrlRewrite\ProductUrlRewriteGenerator */
     protected $productUrlRewriteGenerator;
 
-    /** @var \Magento\CatalogUrlRewrite\Service\V1\StoreViewService|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \Magento\CatalogUrlRewrite\Service\V1\StoreViewService|\\PHPUnit\Framework\MockObject\MockObject */
     protected $storeViewService;
 
-    /** @var \Magento\CatalogUrlRewrite\Model\ObjectRegistryFactory|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \Magento\CatalogUrlRewrite\Model\ObjectRegistryFactory|\\PHPUnit\Framework\MockObject\MockObject */
     protected $objectRegistryFactory;
 
-    /** @var \Magento\Store\Model\StoreManagerInterface|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \Magento\Store\Model\StoreManagerInterface|\\PHPUnit\Framework\MockObject\MockObject */
     protected $storeManager;
     
-    /** @var \use Magento\Framework\App\Config\ScopeConfigInterface|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \use Magento\Framework\App\Config\ScopeConfigInterface|\\PHPUnit\Framework\MockObject\MockObject */
     protected $scopeConfig;
 
-    /** @var \PHPUnit_Framework_MockObject_MockObject  */
+    /** @var \\PHPUnit\Framework\MockObject\MockObject  */
     private $productScopeRewriteGenerator;
+
+    /** @var GetVisibleForStores|\PHPUnit\Framework\MockObject\MockObject */
+    private $visibleForStores;
 
     /**
      * Test method
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->storeManager = $this->getMockBuilder(
                 \Magento\Store\Model\StoreManagerInterface::class
@@ -79,7 +86,7 @@ class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
                 \Magento\CatalogUrlRewrite\Model\ObjectRegistryFactory::class
             )
             ->disableOriginalConstructor()
-            ->setMethods(['create'])
+            ->onlyMethods(['create'])
             ->getMock();
         $this->storeViewService = $this->getMockBuilder(
                 \Magento\CatalogUrlRewrite\Service\V1\StoreViewService::class
@@ -97,6 +104,18 @@ class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
             ->disableOriginalConstructor()
             ->getMock();
         
+        // GetVisibleForStores only exists in Magento >= 2.4.7. Core (and our override) fetch it from the
+        // ObjectManager, so provide one that returns the mock.
+        if (class_exists(GetVisibleForStores::class)) {
+            $this->visibleForStores = $this->getMockBuilder(GetVisibleForStores::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+
+            $objectManager = $this->createStub(ObjectManagerInterface::class);
+            $objectManager->method('get')->willReturnMap([[GetVisibleForStores::class, $this->visibleForStores]]);
+            AppObjectManager::setInstance($objectManager);
+        }
+
         $this->productUrlRewriteGenerator = (new ObjectManager($this))->getObject(
             ProductUrlRewriteGenerator::class,
             [
@@ -110,11 +129,21 @@ class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
             ]
         );
 
-        // Inject private property to avoid ObjectManager error
+        // Inject private properties to avoid ObjectManager errors
         $reflection = new ReflectionClass(get_class($this->productUrlRewriteGenerator));
         $reflectionProperty = $reflection->getProperty('productScopeRewriteGenerator');
-        $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue($this->productUrlRewriteGenerator, $this->productScopeRewriteGenerator);
+    }
+
+    protected function tearDown(): void
+    {
+        // Do not leak the mocked ObjectManager into other tests
+        $instance = new ReflectionClass(AppObjectManager::class);
+        foreach ($instance->getProperties(\ReflectionProperty::IS_STATIC) as $property) {
+            if ($property->getName() === '_instance') {
+                $property->setValue(null, null);
+            }
+        }
     }
 
     /**
@@ -145,10 +174,13 @@ class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
             ->disableOriginalConstructor()
             ->getMock();
         
+        $selected = [];
         $productCategoriesMock->expects($this->exactly(2))
             ->method('addAttributeToSelect')
-            ->withConsecutive(['url_key'], ['url_path'])
-            ->willReturnSelf();
+            ->willReturnCallback(function ($attribute) use (&$selected, $productCategoriesMock) {
+                $selected[] = $attribute;
+                return $productCategoriesMock;
+            });
         
         $productMock->expects($this->once())
             ->method('getCategoryCollection')
@@ -165,6 +197,7 @@ class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
             ->willReturn(true);
         
         $this->assertEquals($urls, $this->productUrlRewriteGenerator->generate($productMock, 1));
+        $this->assertSame(['url_key', 'url_path'], $selected);
     }
     
     /**
@@ -202,6 +235,87 @@ class ProductUrlRewriteGeneratorTest extends \PHPUnit\Framework\TestCase
             ->with('catalog/seo/product_use_categories', 'store', 1)
             ->willReturn(false);
         
+        $this->assertEquals($urls, $this->productUrlRewriteGenerator->generate($productMock, 1));
+    }
+
+    /**
+     * Not visible individually and not visible in any store: no rewrites.
+     *
+     * @return void
+     */
+    public function testGenerateNotVisibleAnywhere()
+    {
+        $productMock = $this->getMockBuilder(Product::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $productMock->method('getVisibility')->willReturn(1);
+
+        // On Magento 2.4.6 core has no such service and returns nothing for these products as well
+        if ($this->visibleForStores) {
+            $this->visibleForStores->expects($this->once())
+                ->method('execute')
+                ->with($productMock)
+                ->willReturn([]);
+        }
+
+        $this->productScopeRewriteGenerator->expects($this->never())
+            ->method('generateForSpecificStoreView');
+
+        $this->assertEquals([], $this->productUrlRewriteGenerator->generate($productMock, 1));
+    }
+
+    /**
+     * Not visible individually in the product's store view, but visible in another one: no rewrites for this store.
+     *
+     * @return void
+     */
+    public function testGenerateNotVisibleInStore()
+    {
+        if (!$this->visibleForStores) {
+            $this->markTestSkipped('GetVisibleForStores exists in Magento >= 2.4.7 only');
+        }
+
+        $productMock = $this->getMockBuilder(Product::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $productMock->method('getVisibility')->willReturn(1);
+        $productMock->method('getStoreId')->willReturn(2);
+
+        $this->visibleForStores->method('execute')->willReturn([3]);
+
+        $this->productScopeRewriteGenerator->expects($this->never())
+            ->method('generateForSpecificStoreView');
+
+        $this->assertEquals([], $this->productUrlRewriteGenerator->generate($productMock, 1));
+    }
+
+    /**
+     * Not visible individually in the default scope but visible in some store view: rewrites are generated.
+     *
+     * @return void
+     */
+    public function testGenerateNotVisibleDefaultScopeVisibleElsewhere()
+    {
+        if (!$this->visibleForStores) {
+            $this->markTestSkipped('GetVisibleForStores exists in Magento >= 2.4.7 only');
+        }
+
+        $productMock = $this->getMockBuilder(Product::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $productMock->method('getVisibility')->willReturn(1);
+        $productMock->method('getStoreId')->willReturn(0);
+
+        $this->visibleForStores->method('execute')->willReturn([1]);
+        $this->scopeConfig->method('isSetFlag')->willReturn(false);
+
+        $urls = ['dummy-url.html'];
+        $this->productScopeRewriteGenerator->method('isGlobalScope')->with(0)->willReturn(true);
+        $this->productScopeRewriteGenerator->expects($this->once())
+            ->method('generateForGlobalScope')
+            ->with([], $productMock, 1)
+            ->willReturn($urls);
+
         $this->assertEquals($urls, $this->productUrlRewriteGenerator->generate($productMock, 1));
     }
 }
