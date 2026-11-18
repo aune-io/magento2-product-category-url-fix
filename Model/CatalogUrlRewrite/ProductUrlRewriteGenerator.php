@@ -11,9 +11,11 @@ use Magento\CatalogUrlRewrite\Model\Product\CanonicalUrlRewriteGenerator;
 use Magento\CatalogUrlRewrite\Model\Product\CurrentUrlRewritesRegenerator;
 use Magento\CatalogUrlRewrite\Model\Product\CategoriesUrlRewriteGenerator;
 use Magento\CatalogUrlRewrite\Model\ProductScopeRewriteGenerator;
+use Magento\CatalogUrlRewrite\Model\GetVisibleForStores;
 use Magento\CatalogUrlRewrite\Model\ObjectRegistryFactory;
 use Magento\CatalogUrlRewrite\Service\V1\StoreViewService;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 
 /**
@@ -33,6 +35,14 @@ class ProductUrlRewriteGenerator extends \Magento\CatalogUrlRewrite\Model\Produc
      * @var ProductScopeRewriteGenerator
      */
     private $productScopeRewriteGenerator;
+
+    /**
+     * Returns the store ids where a product is visible. Only exists in Magento >= 2.4.7, so it is
+     * fetched lazily and never type-hinted in the constructor.
+     *
+     * @var GetVisibleForStores|null
+     */
+    private $visibleForStores;
     
     /**
      * @param \Magento\CatalogUrlRewrite\Model\Product\CanonicalUrlRewriteGenerator $canonicalUrlRewriteGenerator
@@ -75,8 +85,21 @@ class ProductUrlRewriteGenerator extends \Magento\CatalogUrlRewrite\Model\Produc
      */
     public function generate(Product $product, $rootCategoryId = null)
     {
+        // Same check as core. Magento >= 2.4.7: a product hidden individually may still be visible in some
+        // store views. Magento 2.4.6: core generates nothing for these products.
         if ($product->getVisibility() == Visibility::VISIBILITY_NOT_VISIBLE) {
-            return [];
+            $visibleForStoresGetter = $this->getVisibleForStores();
+            if ($visibleForStoresGetter === null) {
+                return [];
+            }
+
+            $visibleForStores = $visibleForStoresGetter->execute($product);
+            if (count($visibleForStores) === 0 ||
+                $product->getStoreId() !== Store::DEFAULT_STORE_ID &&
+                !in_array($product->getStoreId(), $visibleForStores)
+            ) {
+                return [];
+            }
         }
 
         $storeId = $product->getStoreId();
@@ -101,6 +124,20 @@ class ProductUrlRewriteGenerator extends \Magento\CatalogUrlRewrite\Model\Produc
         return $urls;
     }
     
+    /**
+     * Returns the core service telling in which stores a product is visible, null on Magento < 2.4.7.
+     *
+     * @return GetVisibleForStores|null
+     */
+    private function getVisibleForStores()
+    {
+        if ($this->visibleForStores === null && class_exists(GetVisibleForStores::class)) {
+            $this->visibleForStores = ObjectManager::getInstance()->get(GetVisibleForStores::class);
+        }
+
+        return $this->visibleForStores;
+    }
+
     /**
      * Retrieve Delegator for generation rewrites in different scopes.
      * Overrided to allow the implementation of unit testing.
