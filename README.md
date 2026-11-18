@@ -3,17 +3,20 @@ Fix Magento 2 core behaviour on product category url generation.
 By default Magento 2 generates product urls containing categories even if _Use Categories Path for Product URLs_ is turned off.
 This modules prevents the generation of those urls if the aforementioned setting is set to _No_.
 
-[![Build Status](https://travis-ci.org/aune-io/magento2-product-category-url-fix.svg?branch=master)](https://travis-ci.org/aune-io/magento2-product-category-url-fix)
-[![Coverage Status](https://coveralls.io/repos/github/aune-io/magento2-product-category-url-fix/badge.svg?branch=master)](https://coveralls.io/github/aune-io/magento2-product-category-url-fix?branch=master)
+[![Tests](https://github.com/aune-io/magento2-product-category-url-fix/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/aune-io/magento2-product-category-url-fix/actions/workflows/tests.yml)
 [![Latest Stable Version](https://poser.pugx.org/aune-io/magento2-product-category-url-fix/v/stable)](https://packagist.org/packages/aune-io/magento2-product-category-url-fix)
 [![Latest Unstable Version](https://poser.pugx.org/aune-io/magento2-product-category-url-fix/v/unstable)](https://packagist.org/packages/aune-io/magento2-product-category-url-fix)
 [![Total Downloads](https://poser.pugx.org/aune-io/magento2-product-category-url-fix/downloads)](https://packagist.org/packages/aune-io/magento2-product-category-url-fix)
 [![License](https://poser.pugx.org/aune-io/magento2-product-category-url-fix/license)](https://packagist.org/packages/aune-io/magento2-product-category-url-fix)
 
 ## System requirements
-This extension supports the following versions of Magento:
+This extension supports the following versions:
 
-*	Community Edition (CE) versions 2.1.x, 2.2.x, 2.3.x and 2.4.x
+*	Magento Open Source / Adobe Commerce 2.4.6, 2.4.7, 2.4.8 and 2.4.9
+*	PHP 8.2, 8.3, 8.4 and 8.5 (as far as each Magento release supports them)
+
+Older Magento (2.2, 2.3, 2.4.0 - 2.4.5) and PHP (7.x, 8.0, 8.1) versions are no longer supported.
+The last release supporting them is the one tagged before this change; use that if you are still on those versions.
 
 ## Installation
 1. Require the module via Composer
